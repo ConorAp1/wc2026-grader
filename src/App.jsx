@@ -210,7 +210,8 @@ function poolEdgeScore(homeTeam,awayTeam,h,a,muScore){
   if(muScore<16)return 4;
   const hp=T[homeTeam]?.pts??1500, ap=T[awayTeam]?.pts??1500;
   const gap=hp-ap, hd=h-a, absGap=Math.abs(gap);
-  if(hd===0)return 13; // draws overlooked in pools regardless of matchup direction
+  // Draws: contrarian value scales with pts gap — bigger favourite = more consensus = rarer draw = higher bonus
+  if(hd===0){ if(absGap>300)return 15; if(absGap>200)return 14; if(absGap>95)return 13; if(absGap>80)return 10; return 9; }
   const favDir=gap>0?1:-1, resDir=hd>0?1:-1;
   const withFav=favDir===resDir;
   if(!withFav){ // upset result — rare AND defensible (gate already ensured)
