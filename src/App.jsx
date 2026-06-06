@@ -2,31 +2,56 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
 import { ChevronDown, ChevronUp, TrendingUp, RefreshCw, AlertCircle, CheckCircle2, Trophy } from "lucide-react";
 
+// pts = FIFA Apr 2026 ranking points · r = FIFA world ranking position
 const T = {
-  'Mexico':{ t:2,f:'🇲🇽',c:'CONCACAF' }, 'South Africa':{ t:4,f:'🇿🇦',c:'CAF' },
-  'South Korea':{ t:2,f:'🇰🇷',c:'AFC' }, 'Czechia':{ t:3,f:'🇨🇿',c:'UEFA' },
-  'Canada':{ t:3,f:'🇨🇦',c:'CONCACAF' }, 'Bosnia and Herz.':{ t:3,f:'🇧🇦',c:'UEFA' },
-  'Qatar':{ t:4,f:'🇶🇦',c:'AFC' }, 'Switzerland':{ t:2,f:'🇨🇭',c:'UEFA' },
-  'Brazil':{ t:1,f:'🇧🇷',c:'CONMEBOL' }, 'Morocco':{ t:2,f:'🇲🇦',c:'CAF' },
-  'Haiti':{ t:4,f:'🇭🇹',c:'CONCACAF' }, 'Scotland':{ t:3,f:'🏴󠁧󠁢󠁳󠁣󠁴󠁿',c:'UEFA' },
-  'USMNT':{ t:2,f:'🇺🇸',c:'CONCACAF' }, 'Paraguay':{ t:3,f:'🇵🇾',c:'CONMEBOL' },
-  'Australia':{ t:3,f:'🇦🇺',c:'AFC' }, 'Türkiye':{ t:3,f:'🇹🇷',c:'UEFA' },
-  'Germany':{ t:1,f:'🇩🇪',c:'UEFA' }, 'Curaçao':{ t:4,f:'🇨🇼',c:'CONCACAF' },
-  "Côte d'Ivoire":{ t:3,f:'🇨🇮',c:'CAF' }, 'Ecuador':{ t:3,f:'🇪🇨',c:'CONMEBOL' },
-  'Netherlands':{ t:1,f:'🇳🇱',c:'UEFA' }, 'Japan':{ t:2,f:'🇯🇵',c:'AFC' },
-  'Sweden':{ t:3,f:'🇸🇪',c:'UEFA' }, 'Tunisia':{ t:3,f:'🇹🇳',c:'CAF' },
-  'Belgium':{ t:2,f:'🇧🇪',c:'UEFA' }, 'Egypt':{ t:3,f:'🇪🇬',c:'CAF' },
-  'Iran':{ t:3,f:'🇮🇷',c:'AFC' }, 'New Zealand':{ t:4,f:'🇳🇿',c:'OFC' },
-  'Spain':{ t:1,f:'🇪🇸',c:'UEFA' }, 'Cabo Verde':{ t:4,f:'🇨🇻',c:'CAF' },
-  'Saudi Arabia':{ t:3,f:'🇸🇦',c:'AFC' }, 'Uruguay':{ t:2,f:'🇺🇾',c:'CONMEBOL' },
-  'France':{ t:1,f:'🇫🇷',c:'UEFA' }, 'Senegal':{ t:2,f:'🇸🇳',c:'CAF' },
-  'Iraq':{ t:4,f:'🇮🇶',c:'AFC' }, 'Norway':{ t:2,f:'🇳🇴',c:'UEFA' },
-  'Argentina':{ t:1,f:'🇦🇷',c:'CONMEBOL' }, 'Algeria':{ t:3,f:'🇩🇿',c:'CAF' },
-  'Austria':{ t:3,f:'🇦🇹',c:'UEFA' }, 'Jordan':{ t:4,f:'🇯🇴',c:'AFC' },
-  'Portugal':{ t:1,f:'🇵🇹',c:'UEFA' }, 'DR Congo':{ t:4,f:'🇨🇩',c:'CAF' },
-  'Uzbekistan':{ t:4,f:'🇺🇿',c:'AFC' }, 'Colombia':{ t:2,f:'🇨🇴',c:'CONMEBOL' },
-  'England':{ t:1,f:'🏴󠁧󠁢󠁥󠁮󠁧󠁿',c:'UEFA' }, 'Croatia':{ t:2,f:'🇭🇷',c:'UEFA' },
-  'Ghana':{ t:3,f:'🇬🇭',c:'CAF' }, 'Panama':{ t:4,f:'🇵🇦',c:'CONCACAF' },
+  'France':          { pts:1877,r:1,  f:'🇫🇷',c:'UEFA' },
+  'Spain':           { pts:1876,r:2,  f:'🇪🇸',c:'UEFA' },
+  'Argentina':       { pts:1875,r:3,  f:'🇦🇷',c:'CONMEBOL' },
+  'England':         { pts:1826,r:4,  f:'🏴󠁧󠁢󠁥󠁮󠁧󠁿',c:'UEFA' },
+  'Portugal':        { pts:1764,r:5,  f:'🇵🇹',c:'UEFA' },
+  'Brazil':          { pts:1761,r:6,  f:'🇧🇷',c:'CONMEBOL' },
+  'Netherlands':     { pts:1758,r:7,  f:'🇳🇱',c:'UEFA' },
+  'Morocco':         { pts:1756,r:8,  f:'🇲🇦',c:'CAF' },
+  'Belgium':         { pts:1735,r:9,  f:'🇧🇪',c:'UEFA' },
+  'Germany':         { pts:1730,r:10, f:'🇩🇪',c:'UEFA' },
+  'Croatia':         { pts:1717,r:11, f:'🇭🇷',c:'UEFA' },
+  'Colombia':        { pts:1693,r:12, f:'🇨🇴',c:'CONMEBOL' },
+  'Senegal':         { pts:1689,r:13, f:'🇸🇳',c:'CAF' },
+  'Mexico':          { pts:1681,r:14, f:'🇲🇽',c:'CONCACAF' },
+  'USMNT':           { pts:1673,r:15, f:'🇺🇸',c:'CONCACAF' },
+  'Uruguay':         { pts:1673,r:16, f:'🇺🇾',c:'CONMEBOL' },
+  'Japan':           { pts:1660,r:17, f:'🇯🇵',c:'AFC' },
+  'Switzerland':     { pts:1649,r:18, f:'🇨🇭',c:'UEFA' },
+  'Türkiye':         { pts:1615,r:19, f:'🇹🇷',c:'UEFA' },
+  'Iran':            { pts:1607,r:20, f:'🇮🇷',c:'AFC' },
+  'Ecuador':         { pts:1594,r:21, f:'🇪🇨',c:'CONMEBOL' },
+  'Austria':         { pts:1593,r:22, f:'🇦🇹',c:'UEFA' },
+  'South Korea':     { pts:1588,r:23, f:'🇰🇷',c:'AFC' },
+  'Australia':       { pts:1580,r:24, f:'🇦🇺',c:'AFC' },
+  'Algeria':         { pts:1564,r:25, f:'🇩🇿',c:'CAF' },
+  'Egypt':           { pts:1563,r:26, f:'🇪🇬',c:'CAF' },
+  'Canada':          { pts:1556,r:27, f:'🇨🇦',c:'CONCACAF' },
+  'Norway':          { pts:1550,r:31, f:'🇳🇴',c:'UEFA' },
+  'Panama':          { pts:1540,r:33, f:'🇵🇦',c:'CONCACAF' },
+  "Côte d'Ivoire":   { pts:1532,r:34, f:'🇨🇮',c:'CAF' },
+  'Sweden':          { pts:1514,r:36, f:'🇸🇪',c:'UEFA' },
+  'Paraguay':        { pts:1503,r:38, f:'🇵🇾',c:'CONMEBOL' },
+  'Czechia':         { pts:1501,r:39, f:'🇨🇿',c:'UEFA' },
+  'Scotland':        { pts:1498,r:40, f:'🏴󠁧󠁢󠁳󠁣󠁴󠁿',c:'UEFA' },
+  'Tunisia':         { pts:1483,r:42, f:'🇹🇳',c:'CAF' },
+  'DR Congo':        { pts:1478,r:44, f:'🇨🇩',c:'CAF' },
+  'Uzbekistan':      { pts:1465,r:46, f:'🇺🇿',c:'AFC' },
+  'Qatar':           { pts:1454,r:48, f:'🇶🇦',c:'AFC' },
+  'Iraq':            { pts:1430,r:50, f:'🇮🇶',c:'AFC' },
+  'South Africa':    { pts:1420,r:52, f:'🇿🇦',c:'CAF' },
+  'Saudi Arabia':    { pts:1415,r:53, f:'🇸🇦',c:'AFC' },
+  'Jordan':          { pts:1403,r:56, f:'🇯🇴',c:'AFC' },
+  'Bosnia and Herz.':{ pts:1390,r:60, f:'🇧🇦',c:'UEFA' },
+  'Cabo Verde':      { pts:1370,r:65, f:'🇨🇻',c:'CAF' },
+  'Ghana':           { pts:1340,r:70, f:'🇬🇭',c:'CAF' },
+  'Curaçao':         { pts:1300,r:82, f:'🇨🇼',c:'CONCACAF' },
+  'Haiti':           { pts:1295,r:85, f:'🇭🇹',c:'CONCACAF' },
+  'New Zealand':     { pts:1290,r:88, f:'🇳🇿',c:'OFC' },
 };
 
 const FIXTURES = [
@@ -106,16 +131,40 @@ const FIXTURES = [
 
 const GROUPS = ['A','B','C','D','E','F','G','H','I','J','K','L'];
 
-const FREQ_MAP = {
-  '1-0':35,'0-1':35,'2-1':32,'1-2':32,'2-0':28,'0-2':28,
-  '1-1':25,'0-0':22,'3-1':20,'1-3':20,'3-0':18,'0-3':18,
-  '3-2':14,'2-3':14,'2-2':13,'4-1':11,'1-4':11,
-  '4-0':9,'0-4':9,'4-2':7,'2-4':7,'5-1':5,'1-5':5,
-  '5-0':4,'0-5':4,'4-3':3,'3-4':3,'5-2':3,'2-5':3,
-  '6-0':2,'0-6':2,'6-1':2,'1-6':2,'7-0':1,'0-7':1,
-};
+// Confederation defensive modifier: how many more goals the team concedes vs baseline
+const CONF_DEF_MOD = { 'UEFA':1.0,'CONMEBOL':1.0,'CAF':1.12,'AFC':1.28,'CONCACAF':1.57,'OFC':1.28 };
 
-function freqScore(h,a){ return FREQ_MAP[`${h}-${a}`]??1; }
+// Poisson P(X=k) via log-space to avoid float underflow
+function poissonProb(lambda,k){
+  if(k<0||lambda<=0)return 0;
+  let logP=-lambda;
+  for(let i=0;i<k;i++) logP+=Math.log(lambda)-Math.log(i+1);
+  return Math.exp(logP);
+}
+
+// Per-fixture expected goals using FIFA pts gap + confederation defensive data
+function getPoissonLambdas(homeTeam,awayTeam){
+  const BASE=1.3,BOOST=1.2,MAX_GAP=600;
+  const hp=T[homeTeam]?.pts??1500, ap=T[awayTeam]?.pts??1500;
+  const gap=Math.max(-MAX_GAP,Math.min(MAX_GAP,hp-ap));
+  const lhBase=BASE+(gap/MAX_GAP)*BOOST;
+  const laBase=BASE-(gap/MAX_GAP)*BOOST;
+  const awayMod=CONF_DEF_MOD[T[awayTeam]?.c]??1.0; // away team's defensive porousness
+  const homeMod=CONF_DEF_MOD[T[homeTeam]?.c]??1.0; // home team's defensive porousness
+  return{ lh:Math.max(0.1,lhBase*awayMod), la:Math.max(0.1,laBase*homeMod) };
+}
+
+// Normalise: the most probable score for THIS matchup = 35, others scale linearly
+function freqScore(homeTeam,awayTeam,h,a){
+  const{lh,la}=getPoissonLambdas(homeTeam,awayTeam);
+  const p=poissonProb(lh,h)*poissonProb(la,a);
+  let maxP=0;
+  for(let i=0;i<=7;i++) for(let j=0;j<=7;j++){
+    const pij=poissonProb(lh,i)*poissonProb(la,j);
+    if(pij>maxP)maxP=pij;
+  }
+  return maxP>0?Math.max(1,Math.round(35*(p/maxP))):1;
+}
 
 function matchdayScore(md,total){
   if(md===1){ if(total>=2&&total<=3)return 20; if(total===1||total===4)return 15; if(total===0)return 10; return 5; }
@@ -123,39 +172,78 @@ function matchdayScore(md,total){
   if(total<=1)return 20; if(total===2)return 16; if(total===3)return 11; return 6;
 }
 
+// Uses continuous pts gap instead of integer tier gap
 function matchupScore(homeTeam,awayTeam,h,a){
-  const ht=T[homeTeam]?.t??3, at=T[awayTeam]?.t??3;
-  const gap=at-ht, hd=h-a, tot=h+a;
-  if(gap>=2){ if(hd>=3&&tot>=3)return 30; if(hd>=2&&tot>=2)return 25; if(hd===1)return 16; if(hd===0)return 8; return 3; }
-  if(gap===1){ if(hd>=1&&hd<=2&&tot>=1)return 27; if(hd===3)return 20; if(hd===0)return 20; if(hd<0&&hd>=-1)return 14; return 8; }
-  if(gap===0){ if(Math.abs(hd)<=1&&tot<=3)return 28; if(Math.abs(hd)===2&&tot<=4)return 20; if(Math.abs(hd)>=3)return 10; return 22; }
-  if(gap===-1){ if(hd>=-1&&hd<=0)return 25; if(hd===-2)return 22; if(hd===1)return 15; if(hd>=2)return 6; return 18; }
-  if(hd<=-2&&tot>=2)return 28; if(hd===-1)return 16; if(hd===0)return 10; if(hd>=1)return 3; return 18;
+  const hp=T[homeTeam]?.pts??1500, ap=T[awayTeam]?.pts??1500;
+  const gap=hp-ap, hd=h-a, tot=h+a;
+  if(gap>400){  // dominant home favourite
+    if(hd>=3&&tot>=3)return 30; if(hd>=2&&tot>=2)return 25;
+    if(hd===1)return 18; if(hd===0)return 8; return 3;
+  }
+  if(gap>200){  // clear home favourite
+    if(hd>=3&&tot>=3)return 28; if(hd===2)return 24;
+    if(hd===1)return 18; if(hd===0)return 12; return 7;
+  }
+  if(gap>80){   // moderate home favourite
+    if(hd>=1&&hd<=2)return 27; if(hd===3)return 22; if(hd>=4)return 16;
+    if(hd===0)return 22; if(hd===-1)return 16; return 10;
+  }
+  if(gap>=-80){ // even match
+    if(Math.abs(hd)<=1&&tot<=3)return 28; if(Math.abs(hd)===2&&tot<=4)return 20;
+    if(Math.abs(hd)>=3)return 10; return 22;
+  }
+  if(gap>-200){ // moderate away favourite
+    if(hd>=-2&&hd<=-1)return 27; if(hd===-3)return 22; if(hd<=-4)return 16;
+    if(hd===0)return 22; if(hd===1)return 16; return 10;
+  }
+  if(gap>-400){ // clear away favourite
+    if(hd<=-3&&tot>=3)return 28; if(hd===-2)return 24;
+    if(hd===-1)return 18; if(hd===0)return 12; return 7;
+  }
+  // dominant away favourite
+  if(hd<=-3&&tot>=3)return 30; if(hd<=-2&&tot>=2)return 25;
+  if(hd===-1)return 18; if(hd===0)return 8; return 3;
 }
 
-function poolEdgeScore(homeTeam,awayTeam,h,a){
-  const ht=T[homeTeam]?.t??3, at=T[awayTeam]?.t??3;
-  const gap=at-ht, hd=h-a, tot=h+a;
-  if(ht<=1&&at>=3){ if(h>=3&&a===0)return 3; if(h===2&&a===0)return 9; if(hd===1&&tot<=2)return 15; if(h>=2&&a>=1)return 12; return 8; }
-  if(Math.abs(gap)<=1){ if(hd===0)return 13; if(a===0&&h>=3)return 3; if(tot<=2&&Math.abs(hd)<=1)return 13; if(Math.abs(hd)>=3)return 5; return 10; }
-  if(ht>=3&&at<=2){ if(hd>=1)return 14; if(hd===0)return 11; return 8; }
-  return 10;
+// Gate: only award contrarian bonus if the pick is matchup-defensible (muScore ≥ 16)
+function poolEdgeScore(homeTeam,awayTeam,h,a,muScore){
+  if(muScore<16)return 4;
+  const hp=T[homeTeam]?.pts??1500, ap=T[awayTeam]?.pts??1500;
+  const gap=hp-ap, hd=h-a, absGap=Math.abs(gap);
+  if(hd===0)return 13; // draws overlooked in pools regardless of matchup direction
+  const favDir=gap>0?1:-1, resDir=hd>0?1:-1;
+  const withFav=favDir===resDir;
+  if(!withFav){ // upset result — rare AND defensible (gate already ensured)
+    if(absGap>300)return 15; if(absGap>80)return 14; return 12;
+  }
+  // result in the expected direction
+  if(absGap>400)return Math.abs(hd)>=3?7:9;   // dominant fav wins big: expected
+  if(absGap>200)return Math.abs(hd)>=3?10:5;  // clear fav wins narrow: everyone picks this
+  if(absGap>80) return Math.abs(hd)>=3?8:9;   // moderate fav
+  return Math.abs(hd)===1?10:8;               // even match, narrow win
 }
 
 function rateScore(fixture,h,a){
   if(h==null||a==null)return null;
-  const f=freqScore(h,a), md=matchdayScore(fixture.md,h+a);
+  const f=freqScore(fixture.home,fixture.away,h,a);
+  const md=matchdayScore(fixture.md,h+a);
   const mu=matchupScore(fixture.home,fixture.away,h,a);
-  const pe=poolEdgeScore(fixture.home,fixture.away,h,a);
-  return { total:Math.min(100,f+md+mu+pe), freq:f, md, mu, pe };
+  const pe=poolEdgeScore(fixture.home,fixture.away,h,a,mu);
+  return{ total:Math.min(100,f+md+mu+pe), freq:f, md, mu, pe };
 }
 
 function getOdds(homeTeam,awayTeam){
-  const ht=T[homeTeam]?.t??3, at=T[awayTeam]?.t??3;
-  const gap=at-ht;
-  const tbl={4:[1.10,8.5,28],3:[1.28,5.2,10.5],2:[1.52,4.0,6.2],1:[1.80,3.5,4.8],0:[2.30,3.35,3.10],'-1':[3.60,3.40,2.05],'-2':[6.50,3.80,1.55],'-3':[11.0,5.50,1.30],'-4':[28.0,8.50,1.12]};
-  const k=Math.max(-4,Math.min(4,gap)).toString();
-  return tbl[k]??[2.30,3.35,3.10];
+  const hp=T[homeTeam]?.pts??1500, ap=T[awayTeam]?.pts??1500;
+  const gap=hp-ap;
+  if(gap>450) return[1.10,8.50,28.0];
+  if(gap>300) return[1.28,5.20,10.5];
+  if(gap>180) return[1.52,4.00,6.20];
+  if(gap>80)  return[1.80,3.50,4.80];
+  if(gap>=-80)return[2.30,3.35,3.10];
+  if(gap>=-180)return[3.60,3.40,2.05];
+  if(gap>=-300)return[6.50,3.80,1.55];
+  if(gap>=-450)return[11.0,5.50,1.30];
+  return[28.0,8.50,1.12];
 }
 
 function ratingColor(s){ if(s==null)return '#94a3b8'; if(s<40)return '#ef4444'; if(s<55)return '#f97316'; if(s<68)return '#eab308'; if(s<82)return '#22c55e'; return '#15b26b'; }
@@ -185,8 +273,8 @@ function RatingBadge({rating,size='md'}){
 function Breakdown({rating,fixture}){
   if(!rating)return null;
   const rows=[
-    {label:'Scoreline frequency',desc:'How often this exact score appears in WC history',val:rating.freq,max:35,icon:'📊'},
-    {label:'Matchday fit',desc:`MD${fixture.md} — does goal count match the matchday pattern?`,val:rating.md,max:20,icon:'📅'},
+    {label:'Scoreline frequency',desc:'Poisson probability of this exact score given these two specific teams — FIFA rating gap & confederation defensive data baked in.',val:rating.freq,max:35,icon:'📊'},
+    {label:'Matchday fit',desc:fixture.md===3?'MD3 — group finales are managed conservatively. Teams protect leads, avoid risk; synchronized kickoffs deter gambling. Fewer goals score better here.':(`MD${fixture.md} — does goal count match the matchday pattern?`),val:rating.md,max:20,icon:'📅'},
     {label:'Matchup logic',desc:'Does the result reflect the team quality gap?',val:rating.mu,max:30,icon:'⚖️'},
     {label:'Pool edge',desc:'Rare correct picks earn bonus points.',val:rating.pe,max:15,icon:'🎯'},
   ];
@@ -226,7 +314,7 @@ function FixtureRow({fixture,pick,onPick}){
         </div>
         <div style={{flex:1,textAlign:'right',minWidth:0}}>
           <div style={{fontWeight:700,fontSize:12,color:'#0f172a',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{T[fixture.home]?.f} {fixture.home}</div>
-          <div style={{fontSize:8,color:'#64748b'}}>{T[fixture.home]?.c} T{T[fixture.home]?.t}</div>
+          <div style={{fontSize:8,color:'#64748b'}}>{T[fixture.home]?.c} #{T[fixture.home]?.r}</div>
         </div>
         <div style={{display:'flex',alignItems:'center',gap:4,flexShrink:0}}>
           <ScoreStepper value={pick?.h??0} onChange={v=>onPick({h:v,a:pick?.a??0})}/>
@@ -235,7 +323,7 @@ function FixtureRow({fixture,pick,onPick}){
         </div>
         <div style={{flex:1,minWidth:0}}>
           <div style={{fontWeight:700,fontSize:12,color:'#0f172a',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{T[fixture.away]?.f} {fixture.away}</div>
-          <div style={{fontSize:8,color:'#64748b'}}>{T[fixture.away]?.c} T{T[fixture.away]?.t}</div>
+          <div style={{fontSize:8,color:'#64748b'}}>{T[fixture.away]?.c} #{T[fixture.away]?.r}</div>
         </div>
         <div style={{display:'flex',alignItems:'center',gap:6,flexShrink:0}}>
           <RatingBadge rating={hasInput?rating:null}/>
@@ -447,7 +535,7 @@ export default function App(){
       </div>
       <div style={{background:'#0a1a2f',padding:'10px 16px'}}>
         <div style={{maxWidth:860,margin:'0 auto',fontSize:8,color:'rgba(245,241,232,0.4)',fontFamily:'monospace',letterSpacing:'0.5px',textAlign:'center'}}>
-          RATING = Freq (35) + Matchday Fit (20) + Matchup Logic (30) + Pool Edge (15) · Data: 2002–2022 WC · Picks saved to localStorage
+          RATING = Freq (35) + Matchday Fit (20) + Matchup Logic (30) + Pool Edge (15) · Poisson model · FIFA Apr 2026 rankings · Picks saved to localStorage
         </div>
       </div>
     </div>
